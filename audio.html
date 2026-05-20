@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Player</title>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            padding: 0;
+            margin: 0;
+        }
+
+        .audioplayer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.6875rem;
+            padding: 1.8125rem 1rem 0.75rem;
+            background: rgba(255, 255, 255, 1);
+            border-radius: 1.5rem;
+            max-width: 18.75rem;
+            width: 100%;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .audioplayer__progress {
+            width: 100%;
+            height: 0.375rem;
+            background: rgba(217, 217, 217, 1);
+            border-radius: 1.5rem;
+            cursor: pointer;
+            position: relative;
+            touch-action: none;
+            outline: none;
+        }
+
+        .audioplayer__progress:focus-visible {
+            outline: 2px solid rgba(16, 69, 109, 1);
+            outline-offset: 2px;
+        }
+
+        .audioplayer__progress-fill {
+            height: 100%;
+            background: rgba(16, 69, 109, 1);
+            border-radius: 1.5rem;
+            width: 0%;
+            pointer-events: none;
+        }
+
+        .audioplayer__progress-thumb {
+            position: absolute;
+            top: 50%;
+            left: 0%;
+            transform: translate(-50%, -50%);
+            width: 1.5rem;
+            height: 1.5rem;
+            background: rgba(16, 69, 109, 1);
+            border-radius: 50%;
+            pointer-events: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .audioplayer__progress:hover .audioplayer__progress-thumb,
+        .audioplayer__progress.dragging .audioplayer__progress-thumb {
+            transform: translate(-50%, -50%) scale(1.25);
+            box-shadow: 0 0 6px rgba(16, 69, 109, 0.5);
+        }
+
+        .audioplayer__controls {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .audioplayer__play {
+            background: rgba(16, 69, 109, 1);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            margin-right: 1.625rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 3.375rem;
+            height: 3.375rem;
+            transition: background 0.2s;
+        }
+
+        .audioplayer__play:hover {
+            background: rgba(12, 55, 87, 1);
+        }
+
+        .audioplayer__play:focus-visible {
+            outline: 2px solid rgba(16, 69, 109, 1);
+            outline-offset: 2px;
+        }
+
+        .audioplayer__play svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        .audioplayer__play-icon,
+        .audioplayer__pause-icon {
+            transition: opacity 0.2s;
+        }
+
+        .audioplayer__time {
+            display: inline-block;
+            font-size: 1.25rem;
+            font-weight: 400;
+            line-height: 1.4;
+            color: rgba(16, 69, 109, 1);
+            margin-right: 1.5625rem;
+            min-width: 3.25rem;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+
+        .audioplayer__volume {
+            height: 0.375rem;
+            background: rgba(217, 217, 217, 1);
+            border-radius: 1.5rem;
+            cursor: pointer;
+            position: relative;
+            touch-action: none;
+            width: 6.9375rem;
+            outline: none;
+        }
+
+        .audioplayer__volume:focus-visible {
+            outline: 2px solid rgba(16, 69, 109, 1);
+            outline-offset: 2px;
+        }
+
+        .audioplayer__volume-fill {
+            height: 100%;
+            background: rgba(16, 69, 109, 1);
+            border-radius: 1.5rem;
+            width: 50%;
+            pointer-events: none;
+        }
+
+        .audioplayer__volume-thumb {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 1.5rem;
+            height: 1.5rem;
+            background: rgba(16, 69, 109, 1);
+            border-radius: 50%;
+            pointer-events: none;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .audioplayer__volume:hover .audioplayer__volume-thumb,
+        .audioplayer__volume.dragging .audioplayer__volume-thumb {
+            transform: translate(-50%, -50%) scale(1.25);
+            box-shadow: 0 0 6px rgba(16, 69, 109, 0.5);
+        }
+
+        .audioplayer__audio {
+            display: none;
+        }
+
+        @media (min-width: 40rem) {
+            .audioplayer {
+                flex-direction: row;
+                align-items: center;
+                gap: 0;
+                padding: 0.3125rem 1.6875rem 0.3125rem 0.375rem;
+                border-radius: 2.5rem;
+                max-width: 38.75rem;
+            }
+
+            .audioplayer__play {
+                margin-right: 2.375rem;
+            }
+
+            .audioplayer__time {
+                margin-right: 1.3125rem;
+            }
+
+            .audioplayer__progress {
+                flex: 1;
+                margin-right: 1.125rem;
+            }
+
+            .audioplayer__volume {
+                max-width: 5.25rem;
+            }
+        }
+
+        @media (min-width: 60rem) {
+            .audioplayer {
+                max-width: 59.375rem;
+                padding-right: 1.8125rem;
+            }
+
+            .audioplayer__progress {
+                margin-right: 1.9375rem;
+            }
+
+            .audioplayer__volume {
+                width: 6.9375rem;
+            }
+        }
+    </style>
+</head>
+<body style="background-color: red;">
+    <div class="audioplayer" data-audio-player>
+        <div class="audioplayer__progress" data-audio-progress role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+            <div class="audioplayer__progress-fill" data-audio-progress-fill></div>
+            <div class="audioplayer__progress-thumb" data-audio-progress-thumb></div>
+        </div>
+
+        <div class="audioplayer__controls" data-audio-controls>
+            <button type="button" class="audioplayer__play" data-audio-play aria-label="Play">
+                <svg class="audioplayer__play-icon" data-audio-play-icon width="17" height="19" viewBox="0 0 17 19" fill="none" aria-hidden="true">
+                    <path d="M15.2903 7.36676C16.6237 8.13656 16.6237 10.0611 15.2903 10.8309L3 17.9267C1.66667 18.6965 6.71893e-06 17.7342 6.78623e-06 16.1946L7.40657e-06 2.00299C7.47386e-06 0.463387 1.66667 -0.498868 3.00001 0.270932L15.2903 7.36676Z" fill="white"/>
+                </svg>
+                <svg class="audioplayer__pause-icon" data-audio-pause-icon width="17" height="19" viewBox="0 0 17 19" fill="none" aria-hidden="true" style="display:none">
+                    <rect x="2" y="2" width="5" height="15" rx="1" fill="white"/>
+                    <rect x="10" y="2" width="5" height="15" rx="1" fill="white"/>
+                </svg>
+            </button>
+
+            <span class="audioplayer__time" data-audio-time aria-live="polite">0:00</span>
+
+            <div class="audioplayer__volume" data-audio-volume role="slider" aria-label="Volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0">
+                <div class="audioplayer__volume-fill" data-audio-volume-fill></div>
+                <div class="audioplayer__volume-thumb" data-audio-volume-thumb></div>
+            </div>
+        </div>
+
+        <audio class="audioplayer__audio" data-audio-element src="https://www.dropbox.com/scl/fi/285sq2q4aqzzx1ma8834z/.mp3?rlkey=7cl1tj2zu3r4b35tns47bqn18&st=h6dn3fwn&dl=1" preload="metadata"></audio>
+    </div>
+
+    <script>
+    (function() {
+    const player = document.currentScript.parentElement.querySelector('[data-audio-player]');
+    if (!player) return;
+
+    const audio = player.querySelector('[data-audio-element]');
+    const playBtn = player.querySelector('[data-audio-play]');
+    const playIcon = player.querySelector('[data-audio-play-icon]');
+    const pauseIcon = player.querySelector('[data-audio-pause-icon]');
+    const progressBar = player.querySelector('[data-audio-progress]');
+    const progressFill = player.querySelector('[data-audio-progress-fill]');
+    const progressThumb = player.querySelector('[data-audio-progress-thumb]');
+    const timeDisplay = player.querySelector('[data-audio-time]');
+    const volumeBar = player.querySelector('[data-audio-volume]');
+    const volumeFill = player.querySelector('[data-audio-volume-fill]');
+    const volumeThumb = player.querySelector('[data-audio-volume-thumb]');
+    const controls = player.querySelector('[data-audio-controls]');
+
+    let resizeDebounce;
+    audio.volume = 0.5;
+
+    const allPlayers = document.querySelectorAll('[data-audio-player]');
+    allPlayers.forEach(p => {
+        const otherAudio = p.querySelector('[data-audio-element]');
+        if (otherAudio && otherAudio !== audio) {
+            otherAudio.addEventListener('play', () => {
+                if (!audio.paused) {
+                    audio.pause();
+                    playIcon.style.display = 'block';
+                    pauseIcon.style.display = 'none';
+                }
+            });
+        }
+    });
+
+    playBtn.addEventListener('click', function() {
+        if (audio.paused) {
+            audio.play();
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+            playBtn.setAttribute('aria-label', 'Pause');
+        } else {
+            audio.pause();
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+            playBtn.setAttribute('aria-label', 'Play');
+        }
+    });
+
+    function moveProgress() {
+        if (window.innerWidth >= 620) {
+            const volume = controls.querySelector('[data-audio-volume]');
+            controls.insertBefore(progressBar, volume);
+        } else {
+            player.insertBefore(progressBar, player.firstChild);
+        }
+    }
+
+    moveProgress();
+
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeDebounce);
+        resizeDebounce = setTimeout(moveProgress, 100);
+    });
+
+    function updateProgress(percent) {
+        progressFill.style.width = percent + '%';
+        progressThumb.style.left = percent + '%';
+        progressBar.setAttribute('aria-valuenow', Math.round(percent));
+    }
+
+    function updateVolume(percent) {
+        volumeFill.style.width = percent + '%';
+        volumeThumb.style.left = percent + '%';
+        volumeBar.setAttribute('aria-valuenow', Math.round(percent));
+    }
+
+    audio.addEventListener('timeupdate', function() {
+        const percent = (this.currentTime / this.duration) * 100 || 0;
+        updateProgress(percent);
+        const mins = Math.floor(this.currentTime / 60);
+        const secs = Math.floor(this.currentTime % 60).toString().padStart(2, '0');
+        timeDisplay.textContent = mins + ':' + secs;
+    });
+
+    function makeDraggable(bar, fill, thumb, onUpdate) {
+        let isDragging = false;
+
+        function updateFromEvent(e) {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const rect = bar.getBoundingClientRect();
+            const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+            onUpdate(percent);
+        }
+
+        function onStart(e) {
+            isDragging = true;
+            bar.classList.add('dragging');
+            bar.style.cursor = 'grabbing';
+            updateFromEvent(e);
+            e.preventDefault();
+        }
+
+        function onMove(e) {
+            if (!isDragging) return;
+            updateFromEvent(e);
+            e.preventDefault();
+        }
+
+        function onEnd() {
+            isDragging = false;
+            bar.classList.remove('dragging');
+            bar.style.cursor = 'pointer';
+        }
+
+        bar.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+
+        bar.addEventListener('touchstart', onStart, { passive: false });
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('touchend', onEnd);
+
+        bar.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const rect = bar.getBoundingClientRect();
+                const step = 1 / rect.width;
+                const current = (bar === progressBar ? audio.currentTime / audio.duration : audio.volume);
+                onUpdate(Math.min(1, current + step));
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                const rect = bar.getBoundingClientRect();
+                const step = 1 / rect.width;
+                const current = (bar === progressBar ? audio.currentTime / audio.duration : audio.volume);
+                onUpdate(Math.max(0, current - step));
+            }
+        });
+    }
+
+    makeDraggable(progressBar, progressFill, progressThumb, function(percent) {
+        audio.currentTime = percent * audio.duration;
+        updateProgress(percent * 100);
+    });
+
+    makeDraggable(volumeBar, volumeFill, volumeThumb, function(percent) {
+        audio.volume = percent;
+        updateVolume(percent * 100);
+    });
+
+    audio.addEventListener('ended', function() {
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+        playBtn.setAttribute('aria-label', 'Play');
+    });
+    })();
+    </script>
+</body>
+</html>
